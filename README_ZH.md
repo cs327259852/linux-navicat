@@ -53,9 +53,9 @@
 
 ---
 
-## 🗺️ 项目路线图与 Go 重构方案 (Roadmap)
+## 🗺️ 项目路线图 (Roadmap)
 
-本项目正在按计划逐步重构为 **Go + Wails + Vue 3 / TS** 现代架构！请参阅 [每日渐进式重构路线图 (REFACTORING_GO_ROADMAP.md)](REFACTORING_GO_ROADMAP.md)。
+我们非常欢迎各种程度的开发者参与贡献！以下是项目当前规划的功能特性：
 
 - [ ] **SQL 语法高亮与补全**: 集成 `RSyntaxTextArea` 实现 SQL 关键字高亮及智能补全。
 - [ ] **数据导入与导出**: 支持将查询结果一键导出为 CSV、JSON 或 Excel 格式。

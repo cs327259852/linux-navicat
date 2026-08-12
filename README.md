@@ -53,9 +53,9 @@ A lightweight, cross-platform GUI database client for **MySQL** built with Java 
 
 ---
 
-## 🗺️ Project Roadmap & Go Refactoring Plan
+## 🗺️ Project Roadmap
 
-We are progressively refactoring `LinuxNavicat` to **Go + Wails + Vue 3 / TS**! Check out our [Progressive Daily Refactoring Roadmap](REFACTORING_GO_ROADMAP.md).
+We welcome contributions from developers of all skill levels! Here is our current roadmap:
 
 - [ ] **SQL Syntax Highlighting**: Integrate `RSyntaxTextArea` for SQL auto-completion and syntax highlighting.
 - [ ] **Data Export / Import**: Support exporting query results to CSV, JSON, and Excel.
