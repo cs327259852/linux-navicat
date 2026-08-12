@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/your-username/linux-navicat/pkg/db"
 )
 
 // App struct
@@ -10,13 +12,17 @@ type App struct {
 	ctx context.Context
 }
 
+type ConnectionResult struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 // NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{}
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
+// startup is called when the app starts.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
@@ -29,4 +35,52 @@ func (a *App) Greet(name string) string {
 // GetVersion returns current application version
 func (a *App) GetVersion() string {
 	return "0.2.0-go"
+}
+
+// TestConnection tests a MySQL database connection
+func (a *App) TestConnection(config db.ConnectionConfig) ConnectionResult {
+	success, msg := db.TestConnection(config)
+	return ConnectionResult{
+		Success: success,
+		Message: msg,
+	}
+}
+
+// SaveConnection saves a connection config to file
+func (a *App) SaveConnection(config db.ConnectionConfig) ConnectionResult {
+	err := db.GetStorageManager().SaveConnection(config)
+	if err != nil {
+		return ConnectionResult{
+			Success: false,
+			Message: fmt.Sprintf("保存配置失败: %v", err),
+		}
+	}
+	return ConnectionResult{
+		Success: true,
+		Message: "连接保存成功！",
+	}
+}
+
+// GetConnections retrieves all saved connection configs
+func (a *App) GetConnections() []db.ConnectionConfig {
+	conns, err := db.GetStorageManager().GetConnections()
+	if err != nil {
+		return []db.ConnectionConfig{}
+	}
+	return conns
+}
+
+// DeleteConnection removes a connection by ID
+func (a *App) DeleteConnection(id string) ConnectionResult {
+	err := db.GetStorageManager().DeleteConnection(id)
+	if err != nil {
+		return ConnectionResult{
+			Success: false,
+			Message: fmt.Sprintf("删除连接失败: %v", err),
+		}
+	}
+	return ConnectionResult{
+		Success: true,
+		Message: "连接已删除！",
+	}
 }
