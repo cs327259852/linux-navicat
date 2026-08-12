@@ -84,3 +84,50 @@ func (a *App) DeleteConnection(id string) ConnectionResult {
 		Message: "连接已删除！",
 	}
 }
+
+// GetDatabases returns list of databases for a connection
+func (a *App) GetDatabases(config db.ConnectionConfig) []string {
+	dbs, err := db.GetDatabases(config)
+	if err != nil {
+		return []string{}
+	}
+	return dbs
+}
+
+// GetTables returns list of tables in a database
+func (a *App) GetTables(config db.ConnectionConfig, dbName string) []string {
+	tables, err := db.GetTables(config, dbName)
+	if err != nil {
+		return []string{}
+	}
+	return tables
+}
+
+// GetTableDDL returns DDL statement for a table
+func (a *App) GetTableDDL(config db.ConnectionConfig, dbName string, tableName string) string {
+	ddl, err := db.GetTableDDL(config, dbName, tableName)
+	if err != nil {
+		return fmt.Sprintf("获取 DDL 失败: %v", err)
+	}
+	return ddl
+}
+
+// ExecuteSQL executes SQL query and returns formatted result
+func (a *App) ExecuteSQL(config db.ConnectionConfig, dbName string, sqlText string) db.QueryResult {
+	res, err := db.ExecuteSQL(config, dbName, sqlText)
+	if err != nil {
+		return db.QueryResult{
+			Success: false,
+			Message: err.Error(),
+		}
+	}
+	return res
+}
+
+// ExportData exports result data as CSV or JSON
+func (a *App) ExportData(columns []string, rows [][]string, format string) string {
+	if format == "json" {
+		return db.ExportToJSON(columns, rows)
+	}
+	return db.ExportToCSV(columns, rows)
+}

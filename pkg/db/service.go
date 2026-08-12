@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,6 +29,16 @@ type ConnectionConfig struct {
 	Password  string `json:"password"`
 	Schema    string `json:"schema"`
 	CreatedAt string `json:"createdAt,omitempty"`
+}
+
+// QueryResult represents the outcome of a SQL execution
+type QueryResult struct {
+	Success        bool       `json:"success"`
+	Message        string     `json:"message"`
+	Columns        []string   `json:"columns"`
+	Rows           [][]string `json:"rows"`
+	AffectedRows   int64      `json:"affectedRows"`
+	ExecutionTime  int64      `json:"executionTime"` // in milliseconds
 }
 
 type StorageManager struct {
@@ -57,20 +68,26 @@ func GetStorageManager() *StorageManager {
 	return globalStorage
 }
 
-// TestConnection attempts to ping MySQL database
-func TestConnection(config ConnectionConfig) (bool, string) {
+func getDSN(config ConnectionConfig, dbName string) string {
 	if config.Port <= 0 {
 		config.Port = 3306
 	}
-
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?timeout=5s",
+	schema := config.Schema
+	if dbName != "" {
+		schema = dbName
+	}
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?timeout=5s&parseTime=true",
 		config.User,
 		config.Password,
 		config.Host,
 		config.Port,
-		config.Schema,
+		schema,
 	)
+}
 
+// TestConnection attempts to ping MySQL database
+func TestConnection(config ConnectionConfig) (bool, string) {
+	dsn := getDSN(config, "")
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return false, fmt.Sprintf("创建连接失败: %v", err)
@@ -85,6 +102,191 @@ func TestConnection(config ConnectionConfig) (bool, string) {
 	}
 
 	return true, "数据库连接成功！"
+}
+
+// GetDatabases returns list of available databases
+func GetDatabases(config ConnectionConfig) ([]string, error) {
+	dsn := getDSN(config, "")
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SHOW DATABASES")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var databases []string
+	for rows.Next() {
+		var dbName string
+		if err := rows.Scan(&dbName); err == nil {
+			databases = append(databases, dbName)
+		}
+	}
+	return databases, nil
+}
+
+// GetTables returns list of tables in specified database
+func GetTables(config ConnectionConfig, dbName string) ([]string, error) {
+	dsn := getDSN(config, dbName)
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SHOW TABLES")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err == nil {
+			tables = append(tables, tableName)
+		}
+	}
+	return tables, nil
+}
+
+// GetTableDDL returns DDL for a given table
+func GetTableDDL(config ConnectionConfig, dbName string, tableName string) (string, error) {
+	dsn := getDSN(config, dbName)
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	query := fmt.Sprintf("SHOW CREATE TABLE `%s`", tableName)
+	row := db.QueryRow(query)
+
+	var name, ddl string
+	if err := row.Scan(&name, &ddl); err != nil {
+		return "", err
+	}
+	return ddl, nil
+}
+
+// ExecuteSQL executes arbitrary SQL statement
+func ExecuteSQL(config ConnectionConfig, dbName string, sqlText string) (QueryResult, error) {
+	startTime := time.Now()
+	dsn := getDSN(config, dbName)
+
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return QueryResult{Success: false, Message: fmt.Sprintf("连接失败: %v", err)}, nil
+	}
+	defer db.Close()
+
+	sqlTextTrimmed := strings.TrimSpace(sqlText)
+	isSelect := strings.HasPrefix(strings.ToUpper(sqlTextTrimmed), "SELECT") ||
+		strings.HasPrefix(strings.ToUpper(sqlTextTrimmed), "SHOW") ||
+		strings.HasPrefix(strings.ToUpper(sqlTextTrimmed), "DESCRIBE") ||
+		strings.HasPrefix(strings.ToUpper(sqlTextTrimmed), "EXPLAIN")
+
+	if !isSelect {
+		res, err := db.Exec(sqlText)
+		elapsed := time.Since(startTime).Milliseconds()
+		if err != nil {
+			return QueryResult{
+				Success:       false,
+				Message:       fmt.Sprintf("执行错误: %v", err),
+				ExecutionTime: elapsed,
+			}, nil
+		}
+		affected, _ := res.RowsAffected()
+		return QueryResult{
+			Success:       true,
+			Message:       fmt.Sprintf("执行成功，受影响行数: %d", affected),
+			AffectedRows:  affected,
+			ExecutionTime: elapsed,
+		}, nil
+	}
+
+	rows, err := db.Query(sqlText)
+	elapsed := time.Since(startTime).Milliseconds()
+	if err != nil {
+		return QueryResult{
+			Success:       false,
+			Message:       fmt.Sprintf("查询失败: %v", err),
+			ExecutionTime: elapsed,
+		}, nil
+	}
+	defer rows.Close()
+
+	cols, err := rows.Columns()
+	if err != nil {
+		return QueryResult{Success: false, Message: err.Error(), ExecutionTime: elapsed}, nil
+	}
+
+	var resultRows [][]string
+	rawValues := make([]interface{}, len(cols))
+	valuePtrs := make([]interface{}, len(cols))
+	for i := range rawValues {
+		valuePtrs[i] = &rawValues[i]
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(valuePtrs...); err != nil {
+			continue
+		}
+		rowStr := make([]string, len(cols))
+		for i, val := range rawValues {
+			if val == nil {
+				rowStr[i] = "NULL"
+			} else if b, ok := val.([]byte); ok {
+				rowStr[i] = string(b)
+			} else {
+				rowStr[i] = fmt.Sprintf("%v", val)
+			}
+		}
+		resultRows = append(resultRows, rowStr)
+	}
+
+	return QueryResult{
+		Success:       true,
+		Message:       fmt.Sprintf("查询成功，共 %d 条记录", len(resultRows)),
+		Columns:       cols,
+		Rows:          resultRows,
+		AffectedRows:  int64(len(resultRows)),
+		ExecutionTime: elapsed,
+	}, nil
+}
+
+// ExportToCSV converts query results to CSV format
+func ExportToCSV(columns []string, rows [][]string) string {
+	var builder strings.Builder
+	builder.WriteString(strings.Join(columns, ",") + "\n")
+	for _, row := range rows {
+		escapedRow := make([]string, len(row))
+		for i, val := range row {
+			escapedRow[i] = fmt.Sprintf("\"%s\"", strings.ReplaceAll(val, "\"", "\"\""))
+		}
+		builder.WriteString(strings.Join(escapedRow, ",") + "\n")
+	}
+	return builder.String()
+}
+
+// ExportToJSON converts query results to JSON array string
+func ExportToJSON(columns []string, rows [][]string) string {
+	var list []map[string]string
+	for _, row := range rows {
+		item := make(map[string]string)
+		for i, col := range columns {
+			if i < len(row) {
+				item[col] = row[i]
+			}
+		}
+		list = append(list, item)
+	}
+	data, _ := json.MarshalIndent(list, "", "  ")
+	return string(data)
 }
 
 // SaveConnection saves or updates a connection config to file
