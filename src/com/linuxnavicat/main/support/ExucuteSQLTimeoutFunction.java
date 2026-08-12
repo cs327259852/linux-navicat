@@ -1,6 +1,6 @@
-package com.chensong.main.support;
+package com.linuxnavicat.main.support;
 
-import com.chensong.main.exception.SQLBadGrammarException;
+import com.linuxnavicat.main.exception.SQLBadGrammarException;
 
 @FunctionalInterface
 public interface ExucuteSQLTimeoutFunction<T,R> {

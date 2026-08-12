@@ -1,6 +1,6 @@
-package com.chensong.main.entitys;
+package com.linuxnavicat.main.entitys;
 
-import com.chensong.main.jdbc.JDBCConnection;
+import com.linuxnavicat.main.jdbc.JDBCConnection;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

@@ -1,6 +1,6 @@
-package com.chensong.main.entitys;
+package com.linuxnavicat.main.entitys;
 
-import com.chensong.main.Portal;
+import com.linuxnavicat.main.Portal;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;

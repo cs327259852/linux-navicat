@@ -1,4 +1,4 @@
-package com.chensong.main.exception;
+package com.linuxnavicat.main.exception;
 
 public class SQLBadGrammarException extends Exception {
     public SQLBadGrammarException(String msg){

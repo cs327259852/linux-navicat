@@ -1,8 +1,8 @@
-package com.chensong.main.entitys;
+package com.linuxnavicat.main.entitys;
 
 
-import com.chensong.main.jdbc.JDBCConnection;
-import com.chensong.main.support.SystemLanguage;
+import com.linuxnavicat.main.jdbc.JDBCConnection;
+import com.linuxnavicat.main.support.SystemLanguage;
 
 import javax.swing.*;
 import java.io.*;
@@ -59,13 +59,22 @@ public class NewConnection {
      */
     public static List<NewConnection> getAllConnections() {
         BufferedReader fr = null;
+        List<NewConnection> list = new ArrayList<>();
         try{
             InputStream confFileIs = NewConnection.class.getResourceAsStream(filePath);
-            List<NewConnection> list = new ArrayList();
-             fr = new BufferedReader(new InputStreamReader(confFileIs));
+            if (confFileIs == null) {
+                File file = new File("connections.conf");
+                if (file.exists()) {
+                    confFileIs = new FileInputStream(file);
+                }
+            }
+            if (confFileIs == null) {
+                return list;
+            }
+            fr = new BufferedReader(new InputStreamReader(confFileIs));
             String line;
             while((line = fr.readLine()) != null){
-                if(line.trim().length() == 0){
+                if(line.trim().length() == 0 || line.startsWith("#")){
                     continue;
                 }
                 list.add(parseNewConnection(line));
@@ -212,10 +221,8 @@ public class NewConnection {
      * @return
      */
     public boolean saveConnecton() {
-
         try{
-            System.out.println(this.getClass().getResource("/connections.conf"));
-            File file = new File(filePath);
+            File file = new File("connections.conf");
             if(!file.exists()){
                 file.createNewFile();
             }

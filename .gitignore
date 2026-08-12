@@ -2,3 +2,9 @@
 /resources/connections.conf
 /.idea/
 *.iml
+/target/
+dependency-reduced-pom.xml
+LinuxNavicat-Go
+frontend/node_modules/
+frontend/dist/
+

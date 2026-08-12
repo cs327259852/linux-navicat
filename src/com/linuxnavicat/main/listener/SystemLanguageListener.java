@@ -1,6 +1,6 @@
-package com.chensong.main.listener;
+package com.linuxnavicat.main.listener;
 
-import com.chensong.main.entitys.MessageLocale;
+import com.linuxnavicat.main.entitys.MessageLocale;
 
 /**
  * 系统语言监听者接口

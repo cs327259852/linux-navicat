@@ -1,7 +1,7 @@
-package com.chensong.main.support;
+package com.linuxnavicat.main.support;
 
-import com.chensong.main.entitys.MessageLocale;
-import com.chensong.main.listener.SystemLanguageListener;
+import com.linuxnavicat.main.entitys.MessageLocale;
+import com.linuxnavicat.main.listener.SystemLanguageListener;
 
 import java.util.ArrayList;
 import java.util.List;

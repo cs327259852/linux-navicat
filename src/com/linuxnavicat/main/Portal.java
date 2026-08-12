@@ -1,13 +1,11 @@
-package com.chensong.main;
+package com.linuxnavicat.main;
 
-
-import com.chensong.main.entitys.MessageLocale;
-import com.chensong.main.entitys.NewConnection;
-import com.chensong.main.entitys.PageEntity;
-import com.chensong.main.jdbc.JDBCConnection;
-import com.chensong.main.support.SystemLanguage;
-import com.chensong.main.uitl.BeanUtils;
-import com.mysql.jdbc.StringUtils;
+import com.linuxnavicat.main.entitys.MessageLocale;
+import com.linuxnavicat.main.entitys.NewConnection;
+import com.linuxnavicat.main.entitys.PageEntity;
+import com.linuxnavicat.main.jdbc.JDBCConnection;
+import com.linuxnavicat.main.support.SystemLanguage;
+import com.linuxnavicat.main.uitl.BeanUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -37,7 +35,7 @@ public class Portal {
     /**
      *顶级容器名称
      */
-    private static final String TOP_CONTAINER_NAME = "NavicatLikeApp";
+    private static final String TOP_CONTAINER_NAME = "LinuxNavicat";
     /**
      * 顶级容器尺寸
      */
@@ -145,8 +143,11 @@ public class Portal {
 
     public static void main(String[] args) {
         currentMessageLocale = MessageLocale.getMessageLocale(Locale.SIMPLIFIED_CHINESE);
-        // 确保一个漂亮的外观风格
-        JFrame.setDefaultLookAndFeelDecorated(true);
+        try {
+            com.formdev.flatlaf.FlatLightLaf.setup();
+        } catch (Throwable e) {
+            JFrame.setDefaultLookAndFeelDecorated(true);
+        }
         jf.addWindowListener(new WindowAdapter() {
             /**
              * 程序关闭事件绑定：释放连接池
@@ -667,11 +668,11 @@ public class Portal {
 
 
         JPanel jp = new JPanel(new GridLayout(5,1));
-        jp.add(new JLabel("介绍：连接MYSQL的图形化客户端软件"));
-        jp.add(new JLabel("作者：peter"));
-        jp.add(new JLabel("QQ:327259852"));
-        jp.add(new JLabel("wechat:cs327259852"));
-        jp.add(new JLabel("版本：0.2"));
+        jp.add(new JLabel("介绍：连接 MySQL 的图形化客户端软件"));
+        jp.add(new JLabel("作者：linux-navicat 开发者社区"));
+        jp.add(new JLabel("项目主页：https://github.com/your-username/linux-navicat"));
+        jp.add(new JLabel("问题反馈：GitHub Issues"));
+        jp.add(new JLabel("版本：0.2.0"));
         dialog.add(jp);
         //显示对话框
         dialog.setVisible(true);
@@ -801,7 +802,7 @@ public class Portal {
         jToolBar.add(executeSelectedBtn);
         jTextArea.addCaretListener(e -> {
                 String selectedText = jTextArea.getSelectedText();
-                boolean isEmpty = StringUtils.isNullOrEmpty(selectedText);
+                boolean isEmpty = selectedText == null || selectedText.trim().isEmpty();
                 if(isEmpty ){
                     executeBtn.setVisible(true);
                     executeSelectedBtn.setVisible(false);

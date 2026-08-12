@@ -1,8 +1,8 @@
-package com.chensong.main.jdbc;
+package com.linuxnavicat.main.jdbc;
 
-import com.chensong.main.entitys.NewConnection;
-import com.chensong.main.exception.SQLBadGrammarException;
-import com.chensong.main.support.ExucuteSQLTimeoutFunction;
+import com.linuxnavicat.main.entitys.NewConnection;
+import com.linuxnavicat.main.exception.SQLBadGrammarException;
+import com.linuxnavicat.main.support.ExucuteSQLTimeoutFunction;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -27,10 +27,13 @@ public class JDBCConnection {
 
     static{
         try {
-            Class.forName(JDBC_DRIVER);
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            System.out.println("jdbc驱动加载失败");
+            try {
+                Class.forName("com.mysql.jdbc.Driver");
+            } catch (ClassNotFoundException ex) {
+                System.out.println("jdbc驱动加载失败: " + ex.getMessage());
+            }
         }
     }
 
